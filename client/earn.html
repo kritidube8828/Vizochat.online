@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Earn Coin</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="header"><a class="back-link" href="/profile.html">← Earn Coin</a></div>
+
+  <div class="container">
+    <div class="glass glow-border center" style="padding:26px;">
+      <div class="muted" style="font-size:12px;">TOTAL EARNED</div>
+      <div id="totalEarned" style="font-size:34px; font-weight:800; color:#33e6ff; margin:6px 0;">-- Coins</div>
+      <div id="withdrawUsd" class="muted" style="font-size:13px;">≈ $0.00 withdrawable</div>
+    </div>
+
+    <div class="glass mt16" style="padding:18px;">
+      <div class="row"><b>Withdrawal Rate</b></div>
+      <p class="muted mt8" id="rateText" style="font-size:13px;">-- coins = $1</p>
+    </div>
+
+    <div class="mt24">
+      <b>Transaction History</b>
+      <div id="history" class="mt12"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  (async () => {
+    const data = await api('/api/coins/earn');
+    document.getElementById('totalEarned').textContent = fmtCoins(data.total_earned) + ' Coins';
+    document.getElementById('withdrawUsd').textContent = `≈ $${data.withdrawable_usd} withdrawable`;
+    document.getElementById('rateText').textContent = `${data.coins_per_dollar} Earned Coins = $1`;
+
+    const el = document.getElementById('history');
+    if (!data.history.length) {
+      el.innerHTML = '<p class="muted" style="font-size:13px;">No earnings yet.</p>';
+    } else {
+      el.innerHTML = data.history.map(t => `
+        <div class="glass row" style="padding:12px 16px; margin-bottom:8px;">
+          <span style="font-size:13px;">Gift received</span>
+          <span style="color:#33e6ff; font-weight:700;">+${t.amount}</span>
+        </div>`).join('');
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Profile</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <a class="back-link" href="/home.html">← Profile</a>
+    <a id="logoutBtn" class="btn-sm btn-outline" style="display:inline-block; border-radius:12px; padding:8px 14px;">Logout</a>
+  </div>
+
+  <div class="container center">
+    <img id="avatar" src="img/default-avatar.svg" style="width:88px; height:88px; border-radius:50%; border:3px solid #33e6ff; box-shadow:0 0 24px rgba(51,230,255,.5); object-fit:cover;">
+    <h2 id="username" style="margin:12px 0 2px;">--</h2>
+    <p class="muted" id="userid" style="font-size:12px;">ID: --</p>
+  </div>
+
+  <div class="container" style="padding-top:0;">
+    <div class="option-card glass" onclick="location.href='/earn.html'">
+      <div class="option-icon">💰</div>
+      <div><div class="option-title">Earn Coin</div><div class="option-sub">Your creator earnings & withdrawal</div></div>
+      <div class="chevron">›</div>
+    </div>
+    <div class="option-card glass" onclick="location.href='/remain.html'">
+      <div class="option-icon">🪙</div>
+      <div><div class="option-title">Remain Coin</div><div class="option-sub">Spendable balance & buy coins</div></div>
+      <div class="chevron">›</div>
+    </div>
+    <div class="option-card glass" onclick="location.href='/help.html'">
+      <div class="option-icon">❓</div>
+      <div><div class="option-title">Help</div><div class="option-sub">Get support</div></div>
+      <div class="chevron">›</div>
+    </div>
+    <div class="option-card glass" onclick="location.href='/camera.html'">
+      <div class="option-icon">📷</div>
+      <div><div class="option-title">Camera</div><div class="option-sub">Manage camera permission</div></div>
+      <div class="chevron">›</div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  (async () => {
+    const { user } = await api('/api/user/me');
+    document.getElementById('username').textContent = user.username;
+    document.getElementById('userid').textContent = 'ID: ' + user.id.slice(0, 8).toUpperCase();
+    if (user.profile_image) document.getElementById('avatar').src = user.profile_image;
+  })();
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try { await api('/api/user/logout', { method: 'POST' }); } catch(e) {}
+    Session.clear();
+    window.location.href = '/index.html';
+  });
+</script>
+</body>
+</html>

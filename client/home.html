@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Home</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 100 100">
+        <circle cx="30" cy="26" r="9" fill="#33e6ff"/>
+        <circle cx="70" cy="26" r="9" fill="#7b6bff"/>
+        <path d="M20 40 L50 85 L80 40" stroke="#33e6ff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="50" cy="85" r="7" fill="#33e6ff"/>
+      </svg>
+      vizochat
+    </div>
+    <img id="avatar" class="avatar" src="img/default-avatar.svg" onclick="location.href='/profile.html'">
+  </div>
+
+  <div class="container">
+    <div class="hero-orb">
+      <div class="hero-emoji">💬</div>
+    </div>
+    <h1 class="headline">Chat. Connect. <span>Earn.</span></h1>
+    <p class="subtext">Make new friends, share your thoughts and enjoy meaningful conversations on vizochat.online.</p>
+
+    <div class="mt32">
+      <button class="btn btn-primary" onclick="location.href='/video-chat.html'">▶ Start Video Chat →</button>
+    </div>
+
+    <div class="glass mt24" style="padding:16px; display:flex; justify-content:space-around;">
+      <div class="center"><div id="spendable" style="font-weight:800; color:#33e6ff;">--</div><div class="muted" style="font-size:11px;">Spendable</div></div>
+      <div class="center"><div id="earned" style="font-weight:800; color:#7b6bff;">--</div><div class="muted" style="font-size:11px;">Earned</div></div>
+    </div>
+  </div>
+
+  <p class="footer-note">🛡 Safe • Friendly • Global</p>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  (async () => {
+    try {
+      const { user } = await api('/api/user/me');
+      document.getElementById('spendable').textContent = fmtCoins(user.spendable_coins) + ' 🪙';
+      document.getElementById('earned').textContent = fmtCoins(user.earned_coins) + ' ✦';
+      if (user.profile_image) document.getElementById('avatar').src = user.profile_image;
+      if (user.account_status === 'banned') {
+        window.location.href = '/banned.html';
+      }
+    } catch (e) { console.error(e); }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>vizochat — Video Chat</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="video-screen" id="videoScreen">
+
+  <!-- Remote video fills the screen -->
+  <div class="remote-wrap">
+    <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+  </div>
+
+  <!-- Searching / connecting animation -->
+  <div class="search-state" id="searchState">
+    <div class="search-orb">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <div class="search-core"></div>
+    </div>
+    <div class="search-text" id="searchText">Looking for someone...</div>
+    <div class="search-sub" id="searchSub">Please wait, we are connecting you to a random person.</div>
+  </div>
+
+  <!-- Top bar -->
+  <div class="video-top">
+    <div class="video-top-left">
+      <a class="back-link" href="/home.html" style="color:#fff;">←</a>
+      <div class="coin-pill glass" id="coinPill">🪙 --</div>
+    </div>
+    <button id="reportBtn" class="btn-sm btn-outline" style="border-radius:12px;">⚠ Report</button>
+  </div>
+  <div class="video-title-wrap">
+    <div class="video-title">Video Chat</div>
+    <div class="online-dot">Online</div>
+  </div>
+
+  <!-- Own camera floating preview -->
+  <div class="local-preview glass" id="localPreviewWrap">
+    <video id="localVideo" class="local-video" autoplay playsinline muted></video>
+  </div>
+
+  <!-- Gift balance badge (top-left small, per spec) -->
+  <div class="gift-balance-badge hidden" id="giftBadge">🎁 -- </div>
+
+  <div class="swipe-hint hidden" id="swipeHint">↑ Swipe for Next</div>
+
+  <!-- Bottom controls -->
+  <div class="bottom-controls">
+    <button class="ctrl-btn" id="chatBtn"><span>💬</span><span class="lbl">Chat</span></button>
+    <button class="ctrl-btn" id="cameraBtn"><span>📹</span><span class="lbl">Camera</span></button>
+    <button class="ctrl-btn" id="giftBtn"><span>🎁</span><span class="lbl">Gift</span></button>
+    <button class="ctrl-btn" id="muteBtn"><span>🎤</span><span class="lbl">Mute</span></button>
+  </div>
+</div>
+
+<!-- Gift sheet -->
+<div class="sheet-backdrop hidden" id="giftSheetBackdrop">
+  <div class="sheet">
+    <div class="row"><b>Send a Gift</b><span class="muted" style="font-size:12px;" id="giftSheetBalance"></span></div>
+    <div class="gift-grid">
+      <div class="gift-opt glass" data-amt="3"><div class="gift-opt-amt">🎁 3</div></div>
+      <div class="gift-opt glass" data-amt="29"><div class="gift-opt-amt">🎁 29</div></div>
+      <div class="gift-opt glass" data-amt="69"><div class="gift-opt-amt">🎁 69</div></div>
+      <div class="gift-opt glass" data-amt="149"><div class="gift-opt-amt">🎁 149</div></div>
+      <div class="gift-opt glass" data-amt="599"><div class="gift-opt-amt">🎁 599</div></div>
+      <div class="gift-opt glass" data-amt="999"><div class="gift-opt-amt">🎁 999</div></div>
+    </div>
+    <button class="btn btn-outline mt16" id="closeGiftSheet">Cancel</button>
+  </div>
+</div>
+
+<!-- Chat sheet -->
+<div class="sheet-backdrop hidden" id="chatSheetBackdrop">
+  <div class="sheet" style="display:flex; flex-direction:column; height:60vh;">
+    <div class="row"><b>Chat</b><button class="btn-sm btn-outline" id="closeChatSheet">Close</button></div>
+    <div id="chatMessages" style="flex:1; overflow-y:auto; margin-top:12px; display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="row mt12" style="gap:8px;">
+      <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" style="flex:1;">
+      <button class="btn btn-primary btn-sm" id="sendChatBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report sheet -->
+<div class="sheet-backdrop hidden" id="reportSheetBackdrop">
+  <div class="sheet">
+    <b>Report User</b>
+    <p class="muted mt8" style="font-size:13px;">Select a reason. A short clip will be captured as evidence.</p>
+    <div id="reasonList" class="mt12">
+      <div class="option-card glass reason-opt" data-reason="Nudity or sexual content">Nudity or sexual content</div>
+      <div class="option-card glass reason-opt" data-reason="Harassment or hate speech">Harassment or hate speech</div>
+      <div class="option-card glass reason-opt" data-reason="Underage user">Underage user</div>
+      <div class="option-card glass reason-opt" data-reason="Spam or scam">Spam or scam</div>
+      <div class="option-card glass reason-opt" data-reason="Violence">Violence</div>
+      <div class="option-card glass reason-opt" data-reason="Other">Other</div>
+    </div>
+    <button class="btn btn-outline mt12" id="closeReportSheet">Cancel</button>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/videochat.js"></script>
+</body>
+</html>

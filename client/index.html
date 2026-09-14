@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Login</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="app" style="display:flex; flex-direction:column; min-height:100dvh;">
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;">
+    <svg width="86" height="86" viewBox="0 0 100 100" style="filter:drop-shadow(0 0 20px rgba(51,230,255,.55));">
+      <circle cx="30" cy="26" r="9" fill="#33e6ff"/>
+      <circle cx="70" cy="26" r="9" fill="#7b6bff"/>
+      <path d="M20 40 L50 85 L80 40" stroke="url(#g1)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="50" cy="85" r="7" fill="#33e6ff"/>
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#33e6ff"/>
+          <stop offset="1" stop-color="#7b6bff"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <h1 style="margin:18px 0 4px; font-size:28px; font-weight:800; letter-spacing:.5px;">vizo<span style="color:#33e6ff;">chat</span></h1>
+    <p class="muted center" style="max-width:280px; font-size:14px;">Chat. Connect. Earn. Meet new people through live video, every day.</p>
+
+    <div style="width:100%; max-width:320px; margin-top:40px;">
+      <!-- Google renders its own branded button inside this div -->
+      <div id="googleBtnContainer" style="display:flex; justify-content:center;"></div>
+      <p id="notConfiguredMsg" class="muted center mt16 hidden" style="font-size:12.5px;">
+        Google sign-in isn't configured yet. Set <b>GOOGLE_CLIENT_ID</b> in <code>server/.env</code> and restart the server.
+      </p>
+      <p class="muted center mt16" style="font-size:11.5px;">By continuing you agree to our Terms & Privacy Policy.</p>
+    </div>
+  </div>
+  <p class="footer-note">🛡 Safe • Friendly • Global</p>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (Session.isLoggedIn()) window.location.href = '/home.html';
+
+  async function onGoogleResponse(response) {
+    try {
+      const data = await api('/api/auth/google', { method: 'POST', body: { id_token: response.credential } });
+      Session.setToken(data.token);
+      window.location.href = '/home.html';
+    } catch (e) {
+      toast('Google sign-in failed. Please try again.');
+    }
+  }
+
+  (async () => {
+    try {
+      const cfg = await api('/api/auth/config');
+      if (!cfg.googleConfigured) {
+        document.getElementById('notConfiguredMsg').classList.remove('hidden');
+        return;
+      }
+      // Poll briefly for the Google script (loaded async/defer) then render the real button.
+      const waitForGoogle = setInterval(() => {
+        if (window.google && window.google.accounts) {
+          clearInterval(waitForGoogle);
+          google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleResponse });
+          google.accounts.id.renderButton(document.getElementById('googleBtnContainer'), {
+            theme: 'filled_black', size: 'large', shape: 'pill', width: 300, text: 'continue_with'
+          });
+        }
+      }, 150);
+      setTimeout(() => clearInterval(waitForGoogle), 8000);
+    } catch (e) {
+      document.getElementById('notConfiguredMsg').classList.remove('hidden');
+    }
+  })();
+</script>
+</body>
+</html>

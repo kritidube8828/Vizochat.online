@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Remain Coin</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="header"><a class="back-link" href="/profile.html">← Remain Coin</a></div>
+
+  <div class="container">
+    <div class="glass glow-border center" style="padding:26px;">
+      <div class="muted" style="font-size:12px;">REMAINING COINS</div>
+      <div id="balance" style="font-size:34px; font-weight:800; color:#33e6ff; margin:6px 0;">🪙 --</div>
+    </div>
+
+    <div class="task-card glass mt16">
+      <div class="row"><b>Daily Task</b><span id="taskStatus" class="muted" style="font-size:12px;"></span></div>
+      <p class="muted mt8" style="font-size:13px;">Write / Submit: vizochat.online</p>
+      <p style="font-size:13px; margin:4px 0;">Reward: <b style="color:#33e6ff;">+25 Coins</b></p>
+      <button id="claimBtn" class="btn btn-primary mt12">Claim +25 Coins</button>
+    </div>
+
+    <div class="mt24">
+      <b>Buy Coins</b>
+      <div class="pkg-grid" id="pkgGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  let PACKAGES = [];
+
+  async function refresh() {
+    const data = await api('/api/coins/remain');
+    document.getElementById('balance').textContent = '🪙 ' + fmtCoins(data.spendable_coins);
+    PACKAGES = data.packages;
+    renderPackages();
+
+    const task = await api('/api/user/daily-task');
+    const btn = document.getElementById('claimBtn');
+    const status = document.getElementById('taskStatus');
+    if (task.claimed_today) {
+      status.textContent = 'Completed today ✅';
+      btn.textContent = 'Come back tomorrow';
+      btn.disabled = true;
+      btn.classList.add('btn-outline');
+      btn.classList.remove('btn-primary');
+    } else {
+      status.textContent = 'Available';
+    }
+  }
+
+  function renderPackages(){
+    document.getElementById('pkgGrid').innerHTML = PACKAGES.map(p => `
+      <div class="pkg-card glass" onclick="buyPackage('${p.label}')">
+        <div class="pkg-coins">🪙 ${fmtCoins(p.coins)}</div>
+        <div class="pkg-price">₹${p.amount_inr}</div>
+      </div>`).join('');
+  }
+
+  async function buyPackage(label) {
+    let order;
+    try {
+      order = await api('/api/payments/create', { method: 'POST', body: { package_label: label } });
+    } catch (e) {
+      if (e.data?.error === 'payment_gateway_not_configured') {
+        toast('Payments aren\'t set up yet — add RAZORPAY_KEY_ID/SECRET in server/.env');
+      } else {
+        toast('Could not start payment. Please try again.');
+      }
+      return;
+    }
+
+    // Real Razorpay Checkout - the widget itself handles UPI/cards/wallets/netbanking.
+    // Coins are credited only after the server verifies the payment signature
+    // (see /api/payments/verify) and again automatically via the webhook, so
+    // every user's coins are added the same way with no manual step.
+    const rzp = new Razorpay({
+      key: order.razorpay_key_id,
+      amount: order.amount_inr * 100,
+      currency: 'INR',
+      name: 'vizochat',
+      description: `${fmtCoins(order.coins)} Coins`,
+      order_id: order.razorpay_order_id,
+      prefill: { name: order.user_name, email: order.user_email },
+      theme: { color: '#33e6ff' },
+      handler: async function (response) {
+        try {
+          const verify = await api('/api/payments/verify', {
+            method: 'POST',
+            body: {
+              payment_id: order.payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            }
+          });
+          toast(`+${verify.coins_added} coins added!`);
+          refresh();
+        } catch (e) {
+          toast('Payment verification failed. Contact support if money was deducted.');
+        }
+      },
+      modal: { ondismiss: function () { toast('Payment cancelled.'); } }
+    });
+    rzp.on('payment.failed', () => toast('Payment failed. Please try again.'));
+    rzp.open();
+  }
+
+  document.getElementById('claimBtn').addEventListener('click', async () => {
+    try {
+      const res = await api('/api/user/daily-task/claim', { method: 'POST' });
+      toast(`+${res.reward_coins} coins claimed!`);
+      refresh();
+    } catch (e) {
+      if (e.status === 409) toast('Already claimed today. Come back tomorrow!');
+      else toast('Something went wrong.');
+    }
+  });
+
+  refresh();
+</script>
+</body>
+</html>
