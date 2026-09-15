@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Camera</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="header"><a class="back-link" href="/profile.html">← Camera</a></div>
+  <div class="container center">
+    <div class="glass glow-border" style="padding:30px;">
+      <div style="font-size:40px;">📷</div>
+      <h3 class="mt12">Camera Permission</h3>
+      <p class="muted" style="font-size:13px;">Allow access to your camera to start video chats. We only request access when you tap the button below.</p>
+      <video id="preview" autoplay playsinline muted style="width:100%; border-radius:14px; margin-top:14px; display:none; background:#000;"></video>
+      <button id="allowBtn" class="btn btn-primary mt16">Allow Camera</button>
+      <p id="status" class="muted mt12" style="font-size:12.5px;"></p>
+    </div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  document.getElementById('allowBtn').addEventListener('click', async () => {
+    const status = document.getElementById('status');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const video = document.getElementById('preview');
+      video.srcObject = stream;
+      video.style.display = 'block';
+      status.textContent = '✅ Camera access granted.';
+      status.style.color = '#4dff9e';
+    } catch (err) {
+      if (err.name === 'NotAllowedError') {
+        status.textContent = '❌ Permission denied. Enable camera access in your browser settings.';
+      } else if (err.name === 'NotFoundError') {
+        status.textContent = '❌ No camera found on this device.';
+      } else {
+        status.textContent = '❌ Camera unavailable: ' + err.message;
+      }
+      status.style.color = '#ff5470';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Suspended</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100dvh; padding:24px;">
+  <div style="font-size:44px;">🚫</div>
+  <h2 class="mt16 center">Account Suspended</h2>
+  <p class="muted center" style="font-size:14px; max-width:300px;">Your account has been suspended for 21 days due to multiple valid reports from other users.</p>
+  <p id="expiry" class="muted center mt8" style="font-size:13px;"></p>
+  <button class="btn btn-outline mt24" onclick="location.href='/help.html'">Contact Help</button>
+</div>
+<script src="js/api.js"></script>
+<script>
+  requireLogin();
+  (async () => {
+    const { user } = await api('/api/user/me');
+    if (user.account_status !== 'banned') { window.location.href = '/home.html'; return; }
+    if (user.ban_expires_at) {
+      const d = new Date(user.ban_expires_at);
+      document.getElementById('expiry').textContent = 'Restored on: ' + d.toLocaleDateString();
+    }
+  })();
+</script>
+</body>
+</html>

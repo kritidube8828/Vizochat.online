@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Admin</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" style="max-width:640px;">
+  <div class="header"><a class="back-link" href="/home.html">← Admin Panel</a></div>
+
+  <div class="container">
+    <div class="stat-grid">
+      <div class="stat-card glass"><div class="stat-num" id="totalUsers">--</div><div class="stat-lbl">Total Users</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="onlineUsers">--</div><div class="stat-lbl">Online Now</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="totalEarned">--</div><div class="stat-lbl">Total Earned Coins</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="totalBought">--</div><div class="stat-lbl">Total Bought Coins</div></div>
+    </div>
+
+    <div class="glass mt24" style="padding:16px;">
+      <b>Search User (by ID / username / email)</b>
+      <div class="row mt8" style="gap:8px;">
+        <input type="text" id="searchInput" placeholder="Enter user id, name or email">
+        <button class="btn btn-primary btn-sm" id="searchBtn">Go</button>
+      </div>
+      <div id="searchResults" class="mt12"></div>
+    </div>
+
+    <div class="mt24">
+      <b>Banned Users</b>
+      <table class="admin-table" id="bannedTable">
+        <thead><tr><th>Username</th><th>Email</th><th>Expires</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="mt24">
+      <b>Recent Errors (Monitoring)</b>
+      <div id="errorList" class="mt12"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

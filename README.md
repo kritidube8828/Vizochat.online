@@ -168,18 +168,21 @@ once you're actually approaching the scale that needs them.
 
 ```
 vizochat/
-  server/
+  server/                  <- Railway "Root Directory" points here
     index.js              entry point (postgres migration, helmet, redis adapter, socket.io, cron)
     db.js                  PostgreSQL pool + schema
     routes/                auth (Google), user, coins, payments (Razorpay), reports, admin
     middleware/             JWT auth (with the login-loop fix) + ban check
     sockets/index.js        matchmaking, WebRTC signaling relay, gift timer, chat relay
-  client/
-    index.html              Google Sign-In login
-    home.html, profile.html, earn.html, remain.html, help.html, camera.html
-    video-chat.html + js/videochat.js   P2P video + chat + gifts + report
-    admin.html + js/admin.js             admin panel
-    css/style.css                        shared neon/glass theme
+    client/                 static frontend, served by Express - lives INSIDE server/
+                            so platforms that deploy only the "Root Directory" (like
+                            Railway) still include it. Do not move this back out to
+                            the repo root, or you'll get "Cannot GET /" again.
+      index.html              Google Sign-In login
+      home.html, profile.html, earn.html, remain.html, help.html, camera.html
+      video-chat.html + js/videochat.js   P2P video + chat + gifts + report
+      admin.html + js/admin.js             admin panel
+      css/style.css                        shared neon/glass theme
 ```
 
 ## Coin rules implemented
