@@ -63,7 +63,16 @@
       const waitForGoogle = setInterval(() => {
         if (window.google && window.google.accounts) {
           clearInterval(waitForGoogle);
-          google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: onGoogleResponse });
+          console.log('[VizoChat debug] Using Google Client ID:', cfg.googleClientId);
+          console.log('[VizoChat debug] Page origin (must exactly match an Authorized JavaScript origin):', window.location.origin);
+          google.accounts.id.initialize({
+            client_id: cfg.googleClientId,
+            callback: onGoogleResponse,
+            error_callback: (err) => {
+              console.error('[VizoChat debug] Google Sign-In error:', err);
+              toast('Google sign-in error: ' + (err?.type || 'unknown'));
+            }
+          });
           google.accounts.id.renderButton(document.getElementById('googleBtnContainer'), {
             theme: 'filled_black', size: 'large', shape: 'pill', width: 300, text: 'continue_with'
           });
