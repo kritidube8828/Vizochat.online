@@ -40,6 +40,7 @@ async function findOrCreateUser({ google_id, username, email, profile_image }) {
 // Public - the client fetches this at load time so the Google Client ID
 // never has to be hardcoded/duplicated in the frontend source.
 router.get('/config', (req, res) => {
+  res.set('Cache-Control', 'no-store'); // never let a browser/proxy cache a stale Client ID
   res.json({ googleClientId: GOOGLE_CLIENT_ID, googleConfigured: !!googleClient });
 });
 
