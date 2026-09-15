@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vizochat — Signing you in…</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" style="display:flex; align-items:center; justify-content:center; min-height:100dvh;">
+  <p class="muted">Signing you in…</p>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const error = params.get('error');
+
+  if (token) {
+    Session.setToken(token);
+    window.location.href = '/home.html';
+  } else {
+    window.location.href = '/index.html?loginError=' + encodeURIComponent(error || 'unknown');
+  }
+</script>
+</body>
+</html>
