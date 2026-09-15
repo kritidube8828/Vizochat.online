@@ -1,21 +1,35 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { v4: uuid } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
 const { pool } = require('../db');
 
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
-let googleClient = null;
-if (GOOGLE_CLIENT_ID) {
-  const { OAuth2Client } = require('google-auth-library');
-  googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+// This is the classic OAuth 2.0 "Authorization Code" flow: a plain full-page
+// redirect to Google and back, with the token exchange happening
+// server-to-server. It does NOT depend on third-party cookies, iframes, or
+// FedCM the way the "Sign in with Google" button/One Tap widget does - so it
+// keeps working even as browsers lock down cross-site cookies further.
+let oauthClient = null;
+if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+  oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
 }
 
 function issueToken(user) {
   return jwt.sign({ uid: user.id }, JWT_SECRET, { expiresIn: '30d' });
+}
+
+function redirectUriFor(req) {
+  // Built from the actual request, so it automatically matches whichever
+  // domain the person is using (Railway domain, custom domain, localhost) -
+  // as long as that exact URL is also listed in Google Cloud Console under
+  // "Authorized redirect URIs".
+  return `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
 }
 
 async function findOrCreateUser({ google_id, username, email, profile_image }) {
@@ -37,27 +51,41 @@ async function findOrCreateUser({ google_id, username, email, profile_image }) {
   return created.rows[0];
 }
 
-// Public - the client fetches this at load time so the Google Client ID
-// never has to be hardcoded/duplicated in the frontend source.
+// Public - the client checks this to decide whether to show the login button
+// or a "not configured" message.
 router.get('/config', (req, res) => {
-  res.set('Cache-Control', 'no-store'); // never let a browser/proxy cache a stale Client ID
-  res.json({ googleClientId: GOOGLE_CLIENT_ID, googleConfigured: !!googleClient });
+  res.set('Cache-Control', 'no-store');
+  res.json({ googleConfigured: !!oauthClient });
 });
 
-// POST /api/auth/google  { id_token }
-// Verifies the Google ID token server-side. Never trust a user object sent from the client.
-router.post('/google', async (req, res) => {
-  try {
-    if (!googleClient) {
-      return res.status(400).json({ error: 'google_oauth_not_configured', message: 'Set GOOGLE_CLIENT_ID in server/.env and restart the server.' });
-    }
-    const { id_token } = req.body;
-    if (!id_token) return res.status(400).json({ error: 'id_token required' });
+// STEP 1 - the login page's button links here, which redirects the whole
+// page to Google's consent screen. Nothing but a normal top-level navigation.
+router.get('/google/start', (req, res) => {
+  if (!oauthClient) {
+    return res.status(400).send('Google login is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in server/.env.');
+  }
+  const url = oauthClient.generateAuthUrl({
+    redirect_uri: redirectUriFor(req),
+    scope: ['openid', 'email', 'profile'],
+    prompt: 'select_account'
+  });
+  res.redirect(url);
+});
 
-    const ticket = await googleClient.verifyIdToken({ idToken: id_token, audience: GOOGLE_CLIENT_ID });
+// STEP 2 - Google redirects back here with a one-time ?code. Exchanged for
+// tokens server-to-server (never exposed to the browser), then the person
+// is handed a normal app JWT via a short bridge page.
+router.get('/google/callback', async (req, res) => {
+  const { code, error } = req.query;
+  if (error) return res.redirect('/auth-callback.html?error=' + encodeURIComponent(error));
+  if (!oauthClient || !code) return res.redirect('/auth-callback.html?error=missing_code');
+
+  try {
+    const { tokens } = await oauthClient.getToken({ code, redirect_uri: redirectUriFor(req) });
+    const ticket = await oauthClient.verifyIdToken({ idToken: tokens.id_token, audience: GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
     if (!payload.email_verified) {
-      return res.status(401).json({ error: 'email_not_verified' });
+      return res.redirect('/auth-callback.html?error=email_not_verified');
     }
 
     const user = await findOrCreateUser({
@@ -68,10 +96,10 @@ router.post('/google', async (req, res) => {
     });
 
     const token = issueToken(user);
-    res.json({ token, user: publicUser(user) });
+    res.redirect('/auth-callback.html?token=' + encodeURIComponent(token));
   } catch (err) {
-    console.error('Google auth failed:', err.message);
-    res.status(401).json({ error: 'google_verification_failed' });
+    console.error('Google OAuth callback failed:', err.message);
+    res.redirect('/auth-callback.html?error=exchange_failed');
   }
 });
 
