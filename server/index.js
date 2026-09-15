@@ -74,7 +74,16 @@ app.use(express.json({ limit: '1mb' }));
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 600, standardHeaders: true, legacyHeaders: false });
 app.use('/api/', apiLimiter);
 
-app.use(express.static(path.join(__dirname, 'client'), { maxAge: '1h' }));
+app.use(express.static(path.join(__dirname, 'client'), {
+  maxAge: '1h',
+  setHeaders: (res, filePath) => {
+    // HTML must always be revalidated - a cached login page could keep
+    // running old inline logic in the user's browser after a deploy.
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
